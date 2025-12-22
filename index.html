@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Instagram Unfollowed Finder - App</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+  position: relative;
+  transition: background 0.3s, color 0.3s;
+}
+body.dark {
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  color: #e0e0e0;
+}
+.container {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 700px;
+  text-align: center;
+  background: rgba(255,255,255,0.85);
+  padding: 50px 30px;
+  border-radius: 12px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+  backdrop-filter: blur(12px);
+  transition: background 0.3s, transform 0.1s;
+}
+body.dark .container {
+  background: rgba(30,30,30,0.85);
+}
+h1 { margin-bottom: 30px; }
+form { display: flex; flex-direction: column; gap: 15px; }
+input[type="file"] { padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+button {
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #0095f6;
+  color: white;
+  transition: background 0.3s, transform 0.1s;
+}
+button:hover { background: #007ac1; }
+#themeToggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: #555;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 3;
+}
+#themeToggle:hover { background: #666; }
+.background-sphere {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform;
+}
+body.dark .background-sphere { background: rgba(255,255,255,0.08); }
+body.light .background-sphere { background: rgba(0,0,0,0.05); }
+</style>
+</head>
+<body class="light">
+
+<div class="container">
+  <h1>Instagram Unfollowed Finder</h1>
+  <form id="uploadForm">
+    <input type="file" id="followersFile" accept=".html">
+    <input type="file" id="followingFile" accept=".html">
+    <button type="submit">Analyze</button>
+  </form>
+</div>
+
+<button id="themeToggle">🌙</button>
+
+<script>
+// Dark/light mode
+if (localStorage.getItem("theme") === "dark") {
+  document.body.classList.remove("light");
+  document.body.classList.add("dark");
+  document.getElementById("themeToggle").textContent = "🌞";
+} else { document.body.classList.add("light"); }
+document.getElementById("themeToggle").onclick = () => {
+  document.body.classList.toggle("dark");
+  document.body.classList.toggle("light");
+  document.getElementById("themeToggle").textContent = document.body.classList.contains("dark") ? "🌞" : "🌙";
+  localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+};
+
+// Floating spheres
+const numSpheres = 20;
+const spheres = [];
+for (let i=0;i<numSpheres;i++){
+  const s = document.createElement("div");
+  s.className="background-sphere";
+  const size=Math.random()*80+20;
+  s.style.width=size+"px";
+  s.style.height=size+"px";
+  s.style.left=Math.random()*window.innerWidth+"px";
+  s.style.top=Math.random()*window.innerHeight+"px";
+  s.speedX=(Math.random()-0.5)*0.3;
+  s.speedY=(Math.random()-0.5)*0.3;
+  document.body.appendChild(s);
+  spheres.push(s);
+}
+function animate(){ spheres.forEach(s=>{
+  let x=parseFloat(s.style.left),y=parseFloat(s.style.top);
+  x+=s.speedX; y+=s.speedY;
+  if(x<-100)x=window.innerWidth;if(x>window.innerWidth)x=-100;
+  if(y<-100)y=window.innerHeight;if(y>window.innerHeight)y=-100;
+  s.style.left=x+"px"; s.style.top=y+"px";
+}); requestAnimationFrame(animate);}
+animate();
+
+// 3D parallax container
+const container = document.querySelector('.container');
+document.addEventListener('mousemove',(e)=>{
+  const x=(e.clientX/window.innerWidth-0.5)*20;
+  const y=(e.clientY/window.innerHeight-0.5)*20;
+  container.style.transform=`rotateY(${x}deg) rotateX(${-y}deg)`;
+});
+
+// File upload handling
+function extractUsers(html,type){
+  const doc = new DOMParser().parseFromString(html,"text/html");
+  const set = new Set();
+  if(type==="followers"){
+    doc.querySelectorAll('a[target="_blank"]').forEach(a=>{const u=a.textContent.trim(); if(u)set.add(u);});
+  }else{
+    doc.querySelectorAll("h2").forEach(h=>{const u=h.textContent.trim(); if(u)set.add(u);});
+  }
+  return [...set];
+}
+
+document.getElementById("uploadForm").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const f1=document.getElementById("followersFile").files[0];
+  const f2=document.getElementById("followingFile").files[0];
+  if(!f1||!f2){ alert("Upload both files"); return; }
+  try{
+    const [followersHTML,followingHTML]=await Promise.all([f1.text(),f2.text()]);
+    const followers=extractUsers(followersHTML,"followers");
+    const following=extractUsers(followingHTML,"following");
+    const fans=followers.filter(u=>!following.includes(u));
+    const notFollowing=following.filter(u=>!followers.includes(u));
+    localStorage.setItem("fans",JSON.stringify(fans));
+    localStorage.setItem("NotFollowing",JSON.stringify(notFollowing));
+    window.location.href="result.html";
+  }catch(err){ console.error(err); alert("Error reading files."); }
+});
+</script>
+
+</body>
+</html>

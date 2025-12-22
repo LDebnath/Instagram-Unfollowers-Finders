@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Instagram Unfollowed Finder - Results</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #f7f7f7 0%, #e0e0e0 100%);
+  color: #333;
+  transition: background 0.3s, color 0.3s;
+}
+body.dark {
+  background: #1e1e1e;
+  color: #e0e0e0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  transition: background 0.3s, color 0.3s;
+}
+body.dark .container {
+  background: #2b2b2b;
+}
+
+h1 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+.tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #e0e0e0;
+  font-weight: bold;
+  transition: background 0.3s, color 0.3s;
+}
+.tab.active {
+  background: #0095f6;
+  color: white;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+input#searchBox {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+.user-cell {
+  display: flex;
+  align-items: center;
+}
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  margin-right: 10px;
+}
+a.profile-btn {
+  background: #0095f6;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.reset-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 20px;
+  border: none;
+  border-radius: 8px;
+  background: #ff4d4f;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#themeToggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: #555;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#themeToggle:hover { background: #666; }
+</style>
+</head>
+<body class="light">
+
+<div class="container">
+  <h1>Instagram Unfollowed Finder - Results</h1>
+  <p id="stats"></p>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="fansTab">Fans (<span id="fansCount">0</span>)</button>
+    <button class="tab" data-tab="notFollowingTab">Not Following (<span id="notFollowingCount">0</span>)</button>
+  </div>
+
+  <input id="searchBox" placeholder="Search username...">
+
+  <div class="tab-content active" id="fansTab">
+    <table id="fansTable">
+      <tr><th>User</th><th>Profile</th></tr>
+    </table>
+  </div>
+
+  <div class="tab-content" id="notFollowingTab">
+    <table id="notFollowingTable">
+      <tr><th>User</th><th>Profile</th></tr>
+    </table>
+  </div>
+
+  <button id="resetBtn" class="reset-btn">🔄 Reset & Upload Again</button>
+</div>
+
+<button id="themeToggle">🌙</button>
+
+<script>
+// Dark/light mode
+if(localStorage.getItem("theme")==="dark"){document.body.classList.remove("light");document.body.classList.add("dark");document.getElementById("themeToggle").textContent="🌞";}
+else{document.body.classList.add("light");}
+document.getElementById("themeToggle").onclick=()=>{
+  document.body.classList.toggle("dark");
+  document.body.classList.toggle("light");
+  document.getElementById("themeToggle").textContent=document.body.classList.contains("dark")?"🌞":"🌙";
+  localStorage.setItem("theme",document.body.classList.contains("dark")?"dark":"light");
+};
+
+// Load data
+const fans=JSON.parse(localStorage.getItem("fans")||"[]");
+const notFollowing=JSON.parse(localStorage.getItem("NotFollowing")||"[]");
+
+document.getElementById("fansCount").textContent=fans.length;
+document.getElementById("notFollowingCount").textContent=notFollowing.length;
+document.getElementById("stats").textContent=`Fans: ${fans.length} • Not Following: ${notFollowing.length}`;
+
+function colorFromName(name){let hash=0;for(let i=0;i<name.length;i++)hash=name.charCodeAt(i)+((hash<<5)-hash);return `hsl(${Math.abs(hash)%360},70%,50%)`;}
+function createAvatar(u){const d=document.createElement("div");d.className="avatar";d.style.background=colorFromName(u);d.textContent=u[0].toUpperCase();return d;}
+function render(list,tableId){const table=document.getElementById(tableId);list.forEach(u=>{const r=document.createElement("tr");const uCell=document.createElement("td");uCell.className="user-cell";uCell.appendChild(createAvatar(u));uCell.append(u);const lCell=document.createElement("td");const a=document.createElement("a");a.href="https://instagram.com/"+u;a.target="_blank";a.textContent="Visit";a.className="profile-btn";lCell.appendChild(a);r.append(uCell,lCell);table.appendChild(r);});}
+render(fans,"fansTable");render(notFollowing,"notFollowingTable");
+
+// Tabs
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.onclick=()=>{
+    document.querySelectorAll(".tab,.tab-content").forEach(e=>e.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
+  };
+});
+
+// Search
+document.getElementById("searchBox").addEventListener("input",e=>{
+  const v=e.target.value.toLowerCase();
+  document.querySelectorAll(".tab-content.active tr").forEach((r,i)=>{
+    if(i===0) return;
+    r.style.display=r.textContent.toLowerCase().includes(v)?"":"none";
+  });
+});
+
+// Reset
+document.getElementById("resetBtn").onclick=()=>{
+  localStorage.clear();
+  window.location.href="index.html";
+};
+</script>
+
+</body>
+</html>
