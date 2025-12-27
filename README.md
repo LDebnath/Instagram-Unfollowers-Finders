@@ -1,10 +1,10 @@
-# Instagram Unfollowed Finder
+# Instagram Unfollower Finder
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-blue?logo=github)](https://ldebnath.github.io/Instagram-Unfollowers-Finders/)
 
 A **free, browser-based tool** to find Instagram users who don’t follow you back (“Not Following”) and your loyal fans. Fully **client-side**, works offline, and supports **dark/light mode**.
 
-**Live Demo:** [Instagram Unfollowed Finder](https://ldebnath.github.io/Instagram-Unfollowers-Finders/)
+**Live Demo:** [Instagram Unfollower Finder](https://ldebnath.github.io/Instagram-Unfollowers-Finders/)
 
 ---
 
